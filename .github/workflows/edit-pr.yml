@@ -18,15 +18,25 @@ jobs:
         uses: cli/gh-action@v2
 
       - name: Extract Ticket Name
-        id: ticket
+        id: extract
         run: |
-          TICKET_NAME=$(echo "${{ github.head_ref }}" | sed 's/^feat\///')
-          echo "ticket_name=$TICKET_NAME"
+          branch_name="${{ github.head_ref }}"
+          ticket_name="${branch_name#*/}"
+          echo "ticket=$ticket_name" >> $GITHUB_OUTPUT
 
       - name: Load PR template with replacement
         id: template
         run: |
-          body=$(sed "s/{ticket_name}/${{ steps.ticket.outputs.ticket_name }}/g" .github/PULL_REQUEST_TEMPLATE.md)
+          body=$(sed "s/{ticket}/${{ steps.extract.outputs.ticket }}/g" .github/PULL_REQUEST_TEMPLATE.md)
           echo "body<<EOF" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Edit PR title and body
+        run: |
+          gh pr edit "$PR_URL" \
+            --title "feat/${{ steps.extract.outputs.ticket }}: " \
+            --body "${{ steps.template.outputs.body }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
