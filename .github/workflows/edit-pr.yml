@@ -7,11 +7,26 @@ on:
       - reopened
 
 jobs:
-  create-pr:
+  edit-pr:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Show current branch name
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install GitHub CLI
+        uses: cli/gh-action@v2
+
+      - name: Extract Ticket Name
+        id: ticket
         run: |
           TICKET_NAME=$(echo "${{ github.head_ref }}" | sed 's/^feat\///')
-          echo "branch name - $TICKET_NAME"
+          echo "ticket_name=$TICKET_NAME"
+
+      - name: Load PR template with replacement
+        id: template
+        run: |
+          body=$(sed "s/{ticket_name}/${{ steps.ticket.outputs.ticket_name }}/g" .github/PULL_REQUEST_TEMPLATE.md)
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
