@@ -31,10 +31,9 @@ jobs:
           pr_url="${{ github.event.pull_request.html_url }}"
           original_body=$(gh pr view "$pr_url" --json body --template '{{.body}}')
           if [ -z "$original_body" ]; then
-            original_body="(No description provided)"
+          original_body="(No description provided)"
           fi
-          echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "original body: $original_body"
+          echo "original<<EOF" >> $GITHUB_OUTPUT
           echo "$original_body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         env:
@@ -44,9 +43,9 @@ jobs:
         id: template
         run: |
           ticket="${{ steps.extract.outputs.ticket }}"
-          original="${{ steps.get_body.outputs.original_body }}"
+          original="${{ steps.get_body.outputs.original }}"
           body=$(<.github/PULL_REQUEST_TEMPLATE.md)
-          body="${body//\{original_body\}/$ticket}"
+          body="${body//\{original_body\}/$original}"
           body="${body//\{ticket\}/$ticket}"
           echo "body<<EOF" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
