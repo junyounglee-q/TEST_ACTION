@@ -43,12 +43,12 @@ jobs:
       - name: Load PR Template
         id: template
         run: |
-          body=$(sed \
-            -e "s/{ticket}/${{ steps.extract.outputs.ticket }}/g" \
-            -e "s/{original_body}/${{ steps.get_body.outputs.original_body }}/g" \
-            .github/PULL_REQUEST_TEMPLATE.md)
+          ticket="${{ steps.extract.outputs.ticket }}"
+          original="${{ steps.get_body.outputs.original_body }}"
+          body=$(<.github/PULL_REQUEST_TEMPLATE.md)
+          body="${body//\{ticket\}/$ticket}"
+          body="${body//\{original_body\}/$original}"
           echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "body: $body"
           echo "$body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
