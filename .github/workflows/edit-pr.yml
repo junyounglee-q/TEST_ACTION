@@ -47,7 +47,7 @@ jobs:
           original="${{ steps.get_body.outputs.original_body }}"
           body=$(<.github/PULL_REQUEST_TEMPLATE.md)
           body="${body//\{ticket\}/$ticket}"
-          body="${body//\{original_body\}/$original}"
+          body="${body//\{original_body\}/$original_body}"
           echo "body<<EOF" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
