@@ -1,0 +1,17 @@
+name: Auto Edit Pull Request
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show current branch name
+        run: |
+          TICKET_NAME=$(echo "${{ github.head_ref }}" | sed 's/^feat\///')
+          echo "branch name - $TICKET_NAME"
