@@ -54,9 +54,11 @@ jobs:
 
       - name: Edit PR title and body
         run: |
-          gh pr edit "${{ github.event.pull_request.html_url }}"" \
+          echo "${{ steps.template.outputs.body }}" > pr_body.txt
+
+          gh pr edit "${{ github.event.pull_request.html_url }}" \
             --title "feat/${{ steps.extract.outputs.ticket }}: " \
-            --body "${{ steps.template.outputs.body }}"
+            --body "$(cat pr_body.txt)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
