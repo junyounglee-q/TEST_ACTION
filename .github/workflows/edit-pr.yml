@@ -14,9 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install GitHub CLI
-        uses: cli/gh-action@v2
-
       - name: Extract Ticket Name
         id: extract
         run: |
