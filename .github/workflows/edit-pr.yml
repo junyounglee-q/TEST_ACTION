@@ -1,21 +1,58 @@
-name: "Update Pull Request"
+name: Auto Edit Pull Request
+
 on:
   pull_request:
     types:
-      - reopened
       - opened
+      - reopened
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  update_pr:
+  edit-pr:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: tzkhan/pr-update-action@v2
-        with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          title-template: '~~ '
-          base-branch-regex: '[-a-zA-Z0-9._/]*'
-          head-branch-regex: '[-a-zA-Z0-9._/]*'
-          body-template: |
-            Merging into
-          body-update-action: 'suffix'
-          body-uppercase-base-match: false
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Extract Ticket Name
+        id: extract
+        run: |
+          branch_name="${{ github.head_ref }}"
+          ticket_name="${branch_name#*/}"
+          echo "ticket=$ticket_name" >> $GITHUB_OUTPUT
+
+      - name: Get Original PR body
+        id: get_body
+        run: |
+          pr_url="${{ github.event.pull_request.html_url }}"
+          original_body=$(gh pr view "$pr_url" --json body --template '{{.body}}')
+          if [ -z "$original_body" ]; then
+            original_body="(No description provided)"
+          fi
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$original_body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Load PR Template
+        id: template
+        run: |
+          body=$(sed \
+            -e "s/{ticket}/${{ steps.extract.outputs.ticket }}/g" \
+            -e "s#{original_body}#${{ steps.get_body.outputs.original_body }}#g" \
+            .github/PULL_REQUEST_TEMPLATE.md)
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Edit PR title and body
+        run: |
+          gh pr edit "${{ github.event.pull_request.html_url }}"" \
+            --title "feat/${{ steps.extract.outputs.ticket }}: " \
+            --body "${{ steps.template.outputs.body }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
