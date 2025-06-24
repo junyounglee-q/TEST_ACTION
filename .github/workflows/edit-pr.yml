@@ -11,33 +11,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  edit-pr:
+  update_pr:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Extract Ticket Name
-        id: extract
-        run: |
-          branch_name="${{ github.head_ref }}"
-          ticket_name="${branch_name#*/}"
-          echo "ticket=$ticket_name" >> $GITHUB_OUTPUT
-
-      - name: Load PR template with replacement
-        id: template
-        run: |
-          body=$(sed "s/{ticket}/${{ steps.extract.outputs.ticket }}/g" .github/PULL_REQUEST_TEMPLATE.md)
-          echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "$body" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Edit PR title and body
-        run: |
-          gh pr edit "$PR_URL" \
-            --title "feat/${{ steps.extract.outputs.ticket }}: " \
-            --body "${{ steps.template.outputs.body }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
+      - uses: tzkhan/pr-update-action@v2
+        with:
+         repo-token: "${{ secrets.GITHUB_TOKEN }}"
+         title-template: ‘[zz] '
+         body-template: |
+          Merging into zzzz
