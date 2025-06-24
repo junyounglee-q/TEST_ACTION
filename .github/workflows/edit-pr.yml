@@ -36,6 +36,8 @@ jobs:
           echo "body<<EOF" >> $GITHUB_OUTPUT
           echo "$original_body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Load PR Template
         id: template
