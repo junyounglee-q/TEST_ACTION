@@ -13,6 +13,8 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           title-template: '~~ '
+          base-branch-regex: '[a-z\d-_.\\/]+'
+          head-branch-regex: 'foo-\d+'
           body-template: |
             Merging into
           body-update-action: 'suffix'
