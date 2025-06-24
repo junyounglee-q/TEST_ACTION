@@ -13,8 +13,8 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           title-template: '~~ '
-          base-branch-regex: '^feat/HEM-\d+$'
-          head-branch-regex: 'main'
+          base-branch-regex: '[-a-zA-Z0-9._/]*'
+          head-branch-regex: '[-a-zA-Z0-9._/]*'
           body-template: |
             Merging into
           body-update-action: 'suffix'
