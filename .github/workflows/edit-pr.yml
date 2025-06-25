@@ -50,13 +50,11 @@ jobs:
           base_branch=""
           
           for branch in "${candidates[@]}"; do
-            git rev-parse --verify origin/$branch >/dev/null 2>&1 || continue
-            merge_base=$(git merge-base "origin/$branch" "origin/$current_branch")
-            if [ -n "$merge_base" ]; then
-              if git branch --contains "$merge_base" | grep -q "$current_branch"; then
-                base_branch="$branch"
-                break
-              fi
+            git show-ref --verify --quiet "refs/remotes/origin/$branch" || continue
+            merge_base=$(git merge-base "origin/$branch" HEAD)
+            if git branch --contains "$merge_base" | grep -q "$current_branch"; then
+              base_branch="$branch"
+              break
             fi
           done
           
@@ -74,8 +72,8 @@ jobs:
           body=$(<.github/PULL_REQUEST_TEMPLATE.md)
           body="${body//\{original_body\}/$original}"
           body="${body//\{ticket\}/$ticket}"
-          body="${body//\{base_branch\}/base_branch}"
-          body="${body//\{current_branch\}/current_branch}"
+          body="${body//\{base_branch\}/$base_branch}"
+          body="${body//\{current_branch\}/$current_branch}"
           
           echo "body<<EOF" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
