@@ -51,7 +51,8 @@ jobs:
           
           for branch in "${candidates[@]}"; do
             git show-ref --verify --quiet "refs/remotes/origin/$branch" || continue
-            merge_base=$(git merge-base "origin/$branch" HEAD)
+            merge_base=$(git merge-base "origin/$branch" HEAD 2>/dev/null)
+            [ -z "$merge_base" ] && continue
             if git branch --contains "$merge_base" | grep -q "$current_branch"; then
               base_branch="$branch"
               break
