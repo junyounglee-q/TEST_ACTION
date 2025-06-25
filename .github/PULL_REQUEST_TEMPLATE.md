@@ -6,4 +6,4 @@
 https://growingenergylabs.atlassian.net/browse/{ticket}
 
 ### 📍 Branch History
- * {base_branch} -> {current_branch}
+ * {parent_branch} -> {current_branch}

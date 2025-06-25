@@ -41,54 +41,51 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Find Base branch
-        id: find_base
+      - name: Find Parent branch
+        id: find_parent
         run: |
-          set +e
-      
           git fetch --all
       
           current_branch="${{ github.head_ref }}"
-          candidates=(main develop staging)
-          base_branch=""
+          candidates=(main develop staging release)
       
-          for branch in "${candidates[@]}"; do
-            git show-ref --verify --quiet "refs/remotes/origin/$branch"
-            if [ $? -ne 0 ]; then
-              continue
-            fi
+          closest_base=""
+          latest_base_commit=""
+          latest_base_commit_date=0
+      
+          for base in "${candidates[@]}"; do
+            base_commit=$(git merge-base origin/$base HEAD 2>/dev/null)
             
-            merge_base=$(git merge-base "origin/$branch" HEAD 2>/dev/null)
-            if [ -z "$merge_base" ]; then
-              continue
-            fi
-            
-            git branch --contains "$merge_base" | grep -q "$current_branch"
-            if [ $? -eq 0 ]; then
-              base_branch="$branch"
-              break
+            if [ -n "$base_commit" ]; then
+              commit_date=$(git show -s --format=%ct "$base_commit")
+              if [ "$commit_date" -gt "$latest_base_commit_date" ]; then
+                latest_base_commit_date=$commit_date
+                latest_base_commit="$base_commit"
+                closest_base="$base"
+              fi
             fi
           done
       
-          if [ -z "$base_branch" ]; then
-            base_branch="-"
+          if [ -n "$closest_base" ]; then
+            echo "closest_base: $closest_base"
+          else
+            closest_base="-"
           fi
-
-          echo "base branch: $base_branch"
-          echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+          
+          echo "parent_branch=$closest_base" >> $GITHUB_OUTPUT
 
       - name: Load PR Template
         id: template
         run: |
           ticket="${{ steps.extract.outputs.ticket }}"
           original="${{ steps.get_body.outputs.original }}"
-          base_branch="${{ steps.find_base.outputs.base_branch }}"
+          parent_branch="${{ steps.find_parent.outputs.parent_branch }}"
           current_branch="${{ github.head_ref }}"
           
           body=$(<.github/PULL_REQUEST_TEMPLATE.md)
           body="${body//\{original_body\}/$original}"
           body="${body//\{ticket\}/$ticket}"
-          body="${body//\{base_branch\}/$base_branch}"
+          body="${body//\{parent_branch\}/$parent_branch}"
           body="${body//\{current_branch\}/$current_branch}"
           
           echo "body<<EOF" >> $GITHUB_OUTPUT
