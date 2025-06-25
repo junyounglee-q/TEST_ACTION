@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - name: Extract Ticket Name
         id: extract
@@ -47,20 +50,25 @@ jobs:
           set +e
           git fetch --all
       
-          current_branch="${{ github.head_ref }}"
-          candidates=(main develop staging)
+          current_branch=$(git rev-parse --abbrev-ref HEAD)
           closest_base=""
-          latest_commit_date=0
+          latest_date=0
       
-          for base in "${candidates[@]}"; do
-            base_commit=$(git merge-base origin/$base HEAD 2>/dev/null)
-          
-            if [ -n "$base_commit" ]; then
-              commit_date=$(git show -s --format=%ct "$base_commit")
-              if [ "$commit_date" -gt "$latest_commit_date" ]; then
-                latest_commit_date=$commit_date
-                closest_base="$base"
-              fi
+          for remote_branch in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/); do
+            if [[ "$remote_branch" == "origin/$current_branch" ]]; then
+              continue
+            fi
+            
+            merge_base=$(git merge-base HEAD "$remote_branch" 2>/dev/null)
+            if [ -z "$merge_base" ]; then
+              continue
+            fi
+            
+            commit_date=$(git show -s --format=%ct "$merge_base")
+            
+            if [ "$commit_date" -gt "$latest_date" ]; then
+              latest_date=$commit_date
+              closest_base=$remote_branch
             fi
           done
       
