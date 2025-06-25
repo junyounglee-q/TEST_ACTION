@@ -44,32 +44,28 @@ jobs:
       - name: Find Parent branch
         id: find_parent
         run: |
+          set +e
           git fetch --all
       
           current_branch="${{ github.head_ref }}"
-          candidates=(main develop staging release)
-      
+          candidates=(main develop staging)
           closest_base=""
-          latest_base_commit=""
-          latest_base_commit_date=0
+          latest_commit_date=0
       
           for base in "${candidates[@]}"; do
             base_commit=$(git merge-base origin/$base HEAD 2>/dev/null)
-            
+          
             if [ -n "$base_commit" ]; then
               commit_date=$(git show -s --format=%ct "$base_commit")
-              if [ "$commit_date" -gt "$latest_base_commit_date" ]; then
-                latest_base_commit_date=$commit_date
-                latest_base_commit="$base_commit"
+              if [ "$commit_date" -gt "$latest_commit_date" ]; then
+                latest_commit_date=$commit_date
                 closest_base="$base"
               fi
             fi
           done
       
-          if [ -n "$closest_base" ]; then
-            echo "closest_base: $closest_base"
-          else
-            closest_base="-"
+          if [ -z "$closest_base" ]; then
+            closest_base="?"
           fi
           
           echo "parent_branch=$closest_base" >> $GITHUB_OUTPUT
