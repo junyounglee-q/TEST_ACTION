@@ -44,21 +44,36 @@ jobs:
       - name: Find Base branch
         id: find_base
         run: |
+          set +e
+      
           git fetch --all
+      
           current_branch="${{ github.head_ref }}"
           candidates=(main develop staging)
           base_branch=""
-          
+      
           for branch in "${candidates[@]}"; do
-            git show-ref --verify --quiet "refs/remotes/origin/$branch" || continue
+            git show-ref --verify --quiet "refs/remotes/origin/$branch"
+            if [ $? -ne 0 ]; then
+              continue
+            fi
+            
             merge_base=$(git merge-base "origin/$branch" HEAD 2>/dev/null)
-            [ -z "$merge_base" ] && continue
-            if git branch --contains "$merge_base" | grep -q "$current_branch"; then
+            if [ -z "$merge_base" ]; then
+              continue
+            fi
+            
+            git branch --contains "$merge_base" | grep -q "$current_branch"
+            if [ $? -eq 0 ]; then
               base_branch="$branch"
               break
             fi
           done
-          
+      
+          if [ -z "$base_branch" ]; then
+            base_branch="-"
+          fi
+
           echo "base branch: $base_branch"
           echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
 
