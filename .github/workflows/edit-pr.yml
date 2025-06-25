@@ -30,23 +30,53 @@ jobs:
         run: |
           pr_url="${{ github.event.pull_request.html_url }}"
           original_body=$(gh pr view "$pr_url" --json body --template '{{.body}}')
+          
           if [ -z "$original_body" ]; then
           original_body="(No description provided)"
           fi
+          
           echo "original<<EOF" >> $GITHUB_OUTPUT
           echo "$original_body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Find Base branch
+        id: find_base
+        run: |
+          git fetch --all
+          current_branch="${{ github.head_ref }}"
+          candidates=(main develop staging)
+          base_branch=""
+          
+          for branch in "${candidates[@]}"; do
+            git rev-parse --verify origin/$branch >/dev/null 2>&1 || continue
+            merge_base=$(git merge-base "origin/$branch" "origin/$current_branch")
+            if [ -n "$merge_base" ]; then
+              if git branch --contains "$merge_base" | grep -q "$current_branch"; then
+                base_branch="$branch"
+                break
+              fi
+            fi
+          done
+          
+          echo "base branch: $base_branch"
+          echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+
       - name: Load PR Template
         id: template
         run: |
           ticket="${{ steps.extract.outputs.ticket }}"
           original="${{ steps.get_body.outputs.original }}"
+          base_branch="${{ steps.find_base.outputs.base_branch }}"
+          current_branch="${{ github.head_ref }}"
+          
           body=$(<.github/PULL_REQUEST_TEMPLATE.md)
           body="${body//\{original_body\}/$original}"
           body="${body//\{ticket\}/$ticket}"
+          body="${body//\{base_branch\}/base_branch}"
+          body="${body//\{current_branch\}/current_branch}"
+          
           echo "body<<EOF" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
