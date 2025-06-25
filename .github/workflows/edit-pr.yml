@@ -44,18 +44,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Load PR Template
-        id: template
+      - name: Update PR Body
+        id: update_body
         run: |
+          pr_url="${{ github.event.pull_request.html_url }}"
+          body=$(gh pr view "$pr_url" --json body --template '{{.body}}')
+          
           ticket="${{ steps.extract.outputs.ticket }}"
-          original="${{ steps.get_body.outputs.original }}"
+          updated_body="${body//\{ticket\}/$ticket}"
           
-          body=$(<.github/PULL_REQUEST_TEMPLATE.md)
-          body="${body//\{original_body\}/$original}"
-          body="${body//\{ticket\}/$ticket}"
-          
-          echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "$body" >> $GITHUB_OUTPUT
+          echo "updated_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$updated_body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Edit PR title and body
@@ -63,11 +62,11 @@ jobs:
           current_branch="${{ github.event.pull_request.head.ref }}"
           base_branch="${{ github.event.pull_request.base.ref }}"
           original_title="${{ github.event.pull_request.title }}"
-          echo "${{ steps.template.outputs.body }}" > pr_body.txt
+          echo "${{ steps.update_body.outputs.updated_body }}" > pr_body.md
 
           gh pr edit "${{ github.event.pull_request.html_url }}" \
             --title "$current_branch : $original_title (→ $base_branch)" \
-            --body "$(cat pr_body.txt)"
+            --body "$(cat pr_body.md)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
