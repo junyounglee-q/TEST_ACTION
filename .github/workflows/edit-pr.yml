@@ -56,6 +56,8 @@ jobs:
           echo "updated_body<<EOF" >> $GITHUB_OUTPUT
           echo "$updated_body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Edit PR title and body
         run: |
@@ -67,5 +69,5 @@ jobs:
             --title "$current_branch : $original_title" \
             --body "$(cat pr_body.md)"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
