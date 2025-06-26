@@ -21,10 +21,10 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Extract checked items from PR body
-        id: extract_labels
+        id: extract
         run: |
           PR_URL="${{ github.event.pull_request.html_url }}"
-          BODY=$(gh pr view "$PR_URL" --json body --template '{{.body}}')
+          PR_BODY=$(gh pr view "$PR_URL" --json body --template '{{.body}}')
 
           # Extract [X] Labels
           CHECKED=$(echo "$PR_BODY" | grep -iE '^\s*-\s*\[x\]' | sed -E 's/^\s*-\s*\[x\]\s*([^:]+):.*/\1/' | xargs)
