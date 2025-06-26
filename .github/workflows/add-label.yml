@@ -42,8 +42,9 @@ jobs:
         if: steps.extract.outputs.add_labels != ''
         run: |
           raw="${{ steps.extract.outputs.add_labels }}"
-          IFS=$'\n' read -rd '' -a arr <<< "$raw"
-          IFS=, joined="${arr[*]}"
+          IFS=',' read -r -a arr <<< "$raw"
+          joined=$(printf "%s," "${arr[@]}")
+          joined="${joined%,}"
 
           echo "Adding labels: $joined"
 
@@ -56,8 +57,9 @@ jobs:
         if: steps.extract.outputs.remove_labels != ''
         run: |
           raw="${{ steps.extract.outputs.remove_labels }}"
-          IFS=$'\n' read -rd '' -a arr <<< "$raw"
-          IFS=, joined="${arr[*]}"
+          IFS=',' read -r -a arr <<< "$raw"
+          joined=$(printf "%s," "${arr[@]}")
+          joined="${joined%,}"
 
           echo "Removing labels: $joined"
 
