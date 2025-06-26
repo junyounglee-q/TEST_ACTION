@@ -64,6 +64,13 @@ jobs:
           current_branch="${{ github.event.pull_request.head.ref }}"
           original_title="${{ github.event.pull_request.title }}"
           echo "${{ steps.update_body.outputs.updated_body }}" > pr_body.md
+          
+          new_title=""
+          if [[ "${{ steps.extract.outputs.title }}" == *"${{ steps.extract.outputs.branch }}"* ]]; then
+            echo new_title="$original_title"
+          else
+            echo new_title="$current_branch : $original_title"
+          fi
 
           gh pr edit "${{ github.event.pull_request.html_url }}" \
             --title "$current_branch : $original_title" \
