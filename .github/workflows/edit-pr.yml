@@ -60,13 +60,12 @@ jobs:
       - name: Edit PR title and body
         run: |
           current_branch="${{ github.event.pull_request.head.ref }}"
-          base_branch="${{ github.event.pull_request.base.ref }}"
           original_title="${{ github.event.pull_request.title }}"
           echo "${{ steps.update_body.outputs.updated_body }}" > pr_body.md
 
           gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --title "$current_branch : $original_title (→ $base_branch)" \
+            --title "$current_branch : $original_title" \
             --body "$(cat pr_body.md)"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
