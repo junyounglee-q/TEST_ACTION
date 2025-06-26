@@ -25,16 +25,17 @@ jobs:
         run: |
           PR_URL="${{ github.event.pull_request.html_url }}"
           PR_BODY=$(gh pr view "$PR_URL" --json body --template '{{.body}}')
-
-          mapfile -t CHECKED <<< "$(echo "$PR_BODY" | grep -iE '^\s*-\s*\[x\]' | sed -E 's/^\s*-\s*\[x\]\s*([^:]+):.*/\1/')"
-          mapfile -t UNCHECKED <<< "$(echo "$PR_BODY" | grep -iE '^\s*-\s*\[\s\]' | sed -E 's/^\s*-\s*\[\s\]\s*([^:]+):.*/\1/')"
-
+      
+          # Extract label names before the colon
+          mapfile -t CHECKED <<< "$(echo "$PR_BODY" | grep -iE '^\s*-\s*\[x\]' | sed -E 's/^\s*-\s*\[x\]\s*([^:]+):.*/\1/' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+          mapfile -t UNCHECKED <<< "$(echo "$PR_BODY" | grep -iE '^\s*-\s*\[\s\]' | sed -E 's/^\s*-\s*\[\s\]\s*([^:]+):.*/\1/' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+      
+          echo "Checked labels: ${CHECKED[*]}"
+          echo "Unchecked labels: ${UNCHECKED[*]}"
+      
           IFS=,
           echo "add_labels=${CHECKED[*]}" >> $GITHUB_OUTPUT
           echo "remove_labels=${UNCHECKED[*]}" >> $GITHUB_OUTPUT
-
-          echo "Checked labels: ${CHECKED[*]}"
-          echo "Unchecked labels: ${UNCHECKED[*]}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
