@@ -41,19 +41,27 @@ jobs:
       - name: Add checked labels
         if: steps.extract.outputs.add_labels != ''
         run: |
-          labels="${{ steps.extract.outputs.add_labels }}"
-          labels="${labels// /,}"
+          raw="${{ steps.extract.outputs.add_labels }}"
+          IFS=$'\n' read -rd '' -a arr <<< "$raw"
+          IFS=, joined="${arr[*]}"
+
+          echo "Adding labels: $joined"
+
           gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --add-label "$labels"
+            --add-label "$joined"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Remove unchecked labels
         if: steps.extract.outputs.remove_labels != ''
         run: |
-          labels="${{ steps.extract.outputs.remove_labels }}"
-          labels="${labels// /,}"  # space → comma
+          raw="${{ steps.extract.outputs.remove_labels }}"
+          IFS=$'\n' read -rd '' -a arr <<< "$raw"
+          IFS=, joined="${arr[*]}"
+
+          echo "Removing labels: $joined"
+
           gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --remove-label "$labels"
+            --remove-label "$joined"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
