@@ -8,6 +8,10 @@ on:
       - synchronize
       - edited
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   label-from-checkbox:
     runs-on: ubuntu-latest
@@ -24,9 +28,11 @@ jobs:
 
           # Extract [X] Labels
           CHECKED=$(echo "$PR_BODY" | grep -iE '^\s*-\s*\[x\]' | sed -E 's/^\s*-\s*\[x\]\s*([^:]+):.*/\1/' | xargs)
+          echo "CHECKED : $CHECKED"
           
           # Extract [ ] Labels
           UNCHECKED=$(echo "$PR_BODY" | grep -iE '^\s*-\s*\[\s\]' | sed -E 's/^\s*-\s*\[\s\]\s*([^:]+):.*/\1/' | xargs)
+          echo "UNCHECKED : $UNCHECKED"
           
           echo "add_labels=$CHECKED" >> $GITHUB_OUTPUT
           echo "remove_labels=$UNCHECKED" >> $GITHUB_OUTPUT
