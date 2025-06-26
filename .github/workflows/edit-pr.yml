@@ -73,7 +73,7 @@ jobs:
           fi
 
           gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --title "$current_branch : $original_title" \
+            --title "$new_title" \
             --body "$(cat pr_body.md)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
