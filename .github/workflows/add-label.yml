@@ -42,21 +42,21 @@ jobs:
         if: steps.extract.outputs.add_labels != ''
         run: |
           raw="${{ steps.extract.outputs.add_labels }}"
-           IFS=',' read -r -a arr <<< "$raw"
-          
-           cleaned_labels=""
-           for label in "${arr[@]}"; do
-             trimmed=$(echo "$label" | xargs)  # 앞뒤 공백 제거
-             if [ -n "$trimmed" ]; then
-               cleaned_labels+="$trimmed,"
-             fi
-           done
-           cleaned_labels="${cleaned_labels%,}"
-          
-           echo "Adding labels: $cleaned_labels"
-          
-           gh pr edit "${{ github.event.pull_request.html_url }}" \
-             --add-label "$cleaned_labels"
+          IFS=',' read -r -a arr <<< "$raw"
+
+          cleaned_labels=""
+          for label in "${arr[@]}"; do
+            trimmed=$(echo "$label" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
+            if [ -n "$trimmed" ]; then
+              cleaned_labels+="$trimmed,"
+            fi
+          done
+          cleaned_labels="${cleaned_labels%,}"
+
+          echo "Adding labels: $cleaned_labels"
+
+          gh pr edit "${{ github.event.pull_request.html_url }}" \
+            --add-label "$cleaned_labels"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
