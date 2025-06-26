@@ -1,0 +1,43 @@
+name: Labeling according to PR
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+jobs:
+  label-from-checkbox:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Extract checked items from PR body
+        id: extract_labels
+        run: |
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          BODY=$(gh pr view "$PR_URL" --json body --template '{{.body}}')
+
+          # Extract checked boxes (- [x] ...)
+          echo "$BODY" | grep -iE '^\s*-\s*\[x\]' | sed -E 's/^\s*-\s*\[x\]\s*//' > checked.txt
+          
+          echo "✅ Checked items:"
+          cat checked.txt
+
+          # Create comma-separated label list
+          LABELS=$(paste -sd, checked.txt | tr -d '\r')
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add labels to PR
+        if: steps.extract_labels.outputs.labels != ''
+        run: |
+          gh pr edit "${{ github.event.pull_request.html_url }}" \
+          --add-label "${{ steps.extract_labels.outputs.labels }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
