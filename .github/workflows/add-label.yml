@@ -42,14 +42,21 @@ jobs:
         if: steps.extract.outputs.add_labels != ''
         run: |
           raw="${{ steps.extract.outputs.add_labels }}"
-          IFS=',' read -r -a arr <<< "$raw"
-          joined=$(printf "%s," "${arr[@]}")
-          joined="${joined%,}"
-
-          echo "Adding labels: $joined"
-
-          gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --add-label "$joined"
+           IFS=',' read -r -a arr <<< "$raw"
+          
+           cleaned_labels=""
+           for label in "${arr[@]}"; do
+             trimmed=$(echo "$label" | xargs)  # 앞뒤 공백 제거
+             if [ -n "$trimmed" ]; then
+               cleaned_labels+="$trimmed,"
+             fi
+           done
+           cleaned_labels="${cleaned_labels%,}"
+          
+           echo "Adding labels: $cleaned_labels"
+          
+           gh pr edit "${{ github.event.pull_request.html_url }}" \
+             --add-label "$cleaned_labels"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -58,12 +65,19 @@ jobs:
         run: |
           raw="${{ steps.extract.outputs.remove_labels }}"
           IFS=',' read -r -a arr <<< "$raw"
-          joined=$(printf "%s," "${arr[@]}")
-          joined="${joined%,}"
 
-          echo "Removing labels: $joined"
+          cleaned_labels=""
+          for label in "${arr[@]}"; do
+            trimmed=$(echo "$label" | xargs)
+            if [ -n "$trimmed" ]; then
+              cleaned_labels+="$trimmed,"
+            fi
+          done
+          cleaned_labels="${cleaned_labels%,}"
+
+          echo "Removing labels: $cleaned_labels"
 
           gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --remove-label "$joined"
+            --remove-label "$cleaned_labels"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
