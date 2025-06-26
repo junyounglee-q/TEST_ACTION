@@ -42,15 +42,19 @@ jobs:
       - name: Add checked labels
         if: steps.extract.outputs.add_labels != ''
         run: |
+          labels="${{ steps.extract.outputs.add_labels }}"
+          labels="${labels// /,}"
           gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --add-label "${{ steps.extract.outputs.add_labels// /,}}"
+            --add-label "$labels"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Remove unchecked labels
         if: steps.extract.outputs.remove_labels != ''
         run: |
+          labels="${{ steps.extract.outputs.remove_labels }}"
+          labels="${labels// /,}"  # space → comma
           gh pr edit "${{ github.event.pull_request.html_url }}" \
-            --remove-label "${{ steps.extract.outputs.remove_labels// /,}}"
+            --remove-label "$labels"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
