@@ -28,7 +28,7 @@ jobs:
 
           mapfile -t CHECKED <<< "$(
             echo "$PR_BODY" | grep -iE '^\s*-\s*\[x\]' | \
-            sed -E 's/^\s*-\s*\[x\]\s*([^:]+):.*/\1/' | \
+            sed -E 's/^\s*-\s*\[[xX]\]\s*([^:]+) *:.*/\1/' | \
             sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
             )"
           
