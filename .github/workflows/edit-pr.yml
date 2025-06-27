@@ -113,7 +113,7 @@ jobs:
 
       - name: Edit PR title and body
         run: |
-          echo "${{ steps.update_title.outputs.$updated_title }}" > pr_title.txt
+          echo "${{ steps.update_title.outputs.updated_title }}" > pr_title.txt
           echo "${{ steps.update_body.outputs.updated_body }}" > pr_body.md
 
           gh pr edit "${{ github.event.pull_request.html_url }}" \
