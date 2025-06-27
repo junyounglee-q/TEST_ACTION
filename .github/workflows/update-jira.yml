@@ -60,7 +60,7 @@ jobs:
         if: contains(github.head_ref, 'SQA') && (github.event.action == 'opened' || github.event.action == 'reopened')
         run: |
           ticket=${{ github.head_ref }}
-          ticket=${ticket#*/}
+          ticket="SQA-4701"
           
           transition_id=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
             -H "Accept: application/json" \
@@ -82,7 +82,7 @@ jobs:
         if: contains(github.head_ref, 'SQA') && (github.event.action == 'closed' && github.event.pull_request.merged == true)
         run: |
           ticket=${{ github.head_ref }}
-          ticket=${ticket#*/}
+          ticket="SQA-4701"
           
           transition_id=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
             -H "Accept: application/json" \
