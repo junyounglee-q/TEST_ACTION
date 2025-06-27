@@ -1,4 +1,4 @@
-name: Labeling according to PR
+name: Update Jira Ticket Status
 
 on:
   pull_request:
