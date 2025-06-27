@@ -5,8 +5,6 @@ on:
     types:
       - opened
       - reopened
-      - synchronize
-      - edited
 
 permissions:
   contents: write
@@ -77,17 +75,18 @@ jobs:
           pr_url="${{ github.event.pull_request.html_url }}"
           body=$(gh pr view "$pr_url" --json body --template '{{.body}}')
           
+          ticket="${{ steps.extract.outputs.ticket }}"
           parent_key="${{ steps.jira.outputs.parent_key }}"
+          
           if [ -z "${{ steps.jira.outputs.due_date }}" ]; then
             due_date=""
           else
             due_date="* Due Date : ${{ steps.jira.outputs.due_date }}"
           fi
           
-          ticket="${{ steps.extract.outputs.ticket }}"
           updated_body="${body//\{ticket\}/$ticket}"
-          updated_body="${body//\{parent_key\}/$parent_key}"
-          updated_body="*${body//\{due_date\}/$due_date}"
+          updated_body="${updated_body//\{parent_key\}/$parent_key}"
+          updated_body="${updated_body//\{due_date\}/$due_date}"
 
           echo "updated_body<<EOF" >> $GITHUB_OUTPUT
           echo "$updated_body" >> $GITHUB_OUTPUT
@@ -101,18 +100,16 @@ jobs:
           # Add branch name
           original_title="${{ github.event.pull_request.title }}"
           current_branch="${{ github.event.pull_request.head.ref }}"
-          if [[ "${{ steps.extract.outputs.title }}" == *"${{ steps.extract.outputs.branch }}"* ]]; then
+          fix_versions="${{ steps.jira.outputs.fix_versions }}"
+          
+          if [[ "$original_title" == *"$current_branch"* ]]; then
             new_title="$original_title"
           else
             new_title="$current_branch : $original_title"
           fi
           
-          # Add Jira fix version
-          fix_versions="${{ steps.jira.outputs.fix_versions }}"
-          if [[ "$new_title" == *"$fix_versions"* ]]; then
-            new_title="$new_title"
-          else
-            new_title="$new_title (-> $fix_version)"
+          if [[ -n "$fix_versions" && "$new_title" != *"$fix_versions"* ]]; then
+            new_title="$new_title (→ $fix_versions)"
           fi
           
           echo "updated_title=$new_title" >> $GITHUB_OUTPUT
