@@ -1,6 +1,9 @@
 ## PR Summary
-* [{ticket}](https://growingenergylabs.atlassian.net/browse/{ticket}) → [{parent_key}](https://growingenergylabs.atlassian.net/browse/{parent_key})
+
+* [{parent_key}](https://growingenergylabs.atlassian.net/browse/{parent_key}) > [{ticket}](https://growingenergylabs.atlassian.net/browse/{ticket}) 
 {due_date}
+{fix_versions}
+
 ### 📝 Brief Description
 
 ### ⭐️ Reviewer Must Check (Optional)

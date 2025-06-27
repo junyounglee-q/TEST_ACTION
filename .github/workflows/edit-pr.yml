@@ -84,9 +84,16 @@ jobs:
             due_date="* Due Date : ${{ steps.jira.outputs.due_date }}"
           fi
           
+          if [ -z "${{ steps.jira.outputs.fix_versions }}" ]; then
+            fix_versions=""
+          else
+            fix_versions="* Fix Version : ${{ steps.jira.outputs.fix_versions }}"
+          fi
+          
           updated_body="${body//\{ticket\}/$ticket}"
           updated_body="${updated_body//\{parent_key\}/$parent_key}"
           updated_body="${updated_body//\{due_date\}/$due_date}"
+          updated_body="${updated_body//\{fix_versions\}/$fix_versions}"
 
           echo "updated_body<<EOF" >> $GITHUB_OUTPUT
           echo "$updated_body" >> $GITHUB_OUTPUT
