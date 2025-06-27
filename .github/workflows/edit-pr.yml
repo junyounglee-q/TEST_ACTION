@@ -49,11 +49,17 @@ jobs:
         run: |
           response=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
             -H "Accept: application/json" \
-            "https://${{ secrets.JIRA_URL }}/rest/api/3/issue/${{ steps.extract.outputs.ticket }}")
+            "${{ secrets.JIRA_URL }}/rest/api/3/issue/${{ steps.extract.outputs.ticket }}")
+          
+          echo "url: ${{ secrets.JIRA_URL }}"
           
           fix_versions=$(echo "$response" | jq -r '[.fields.fixVersions[].name] | join(", ")')
           parent_key=$(echo "$response" | jq -r '.fields.parent.key // empty')
           due_date=$(echo "$response" | jq -r '.fields.duedate // empty')
+          
+          echo "fix_versions: $fix_versions"
+          echo "parent_key: $parent_key"
+          echo "due_date: $due_date"
 
           echo "fix_versions=$fix_versions" >> $GITHUB_OUTPUT
           echo "parent_key=$parent_key" >> $GITHUB_OUTPUT
