@@ -18,9 +18,9 @@ jobs:
           ticket=${{ github.head_ref }}
           ticket=${ticket#*/}
 
-          transition_id=$(curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+          transition_id=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
             -H "Accept: application/json" \
-            "https://$JIRA_URL/rest/api/3/issue/$ticket/transitions" |
+            "${{ secrets.JIRA_URL }}/rest/api/3/issue/$ticket/transitions" |
             jq -r '.transitions[] | select(.name == "Under Review") | .id')
 
           echo "Using transition ID: $transition_id"
@@ -40,9 +40,9 @@ jobs:
           ticket=${{ github.head_ref }}
           ticket=${ticket#*/}
 
-          transition_id=$(curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+          transition_id=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
             -H "Accept: application/json" \
-            "https://$JIRA_URL/rest/api/3/issue/$ticket/transitions" |
+            "${{ secrets.JIRA_URL }}/rest/api/3/issue/$ticket/transitions" |
             jq -r '.transitions[] | select(.name == "Done") | .id')
 
           echo "Using transition ID: $transition_id"
