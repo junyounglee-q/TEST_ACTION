@@ -115,7 +115,7 @@ jobs:
             new_title="$new_title (-> $fix_version)"
           fi
           
-          echo "$updated_title" >> $GITHUB_OUTPUT
+          echo "updated_title=$new_title" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
