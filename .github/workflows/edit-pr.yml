@@ -44,6 +44,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get Jira Information
+        id: jira
+        run: |
+          response=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
+            -H "Accept: application/json" \
+            "${{ secrets.JIRA_URL }}/rest/api/3/issue/${{ steps.extract.outputs.ticket }}")
+          
+          echo "url: ${{ secrets.JIRA_URL }}"
+          
+          fix_versions=$(echo "$response" | jq -r '[.fields.fixVersions[].name] | join(", ")')
+          parent_key=$(echo "$response" | jq -r '.fields.parent.key // empty')
+          due_date=$(echo "$response" | jq -r '.fields.duedate // empty')
+          
+          echo "fix_versions: $fix_versions"
+          echo "parent_key: $parent_key"
+          echo "due_date: $due_date"
+
+          echo "fix_versions=$fix_versions" >> $GITHUB_OUTPUT
+          echo "parent_key=$parent_key" >> $GITHUB_OUTPUT
+          echo "due_date=$due_date" >> $GITHUB_OUTPUT
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+
       - name: Update PR Body
         id: update_body
         run: |
@@ -51,27 +76,50 @@ jobs:
           body=$(gh pr view "$pr_url" --json body --template '{{.body}}')
           
           ticket="${{ steps.extract.outputs.ticket }}"
-          updated_body="${body//\{ticket\}/$ticket}"
+          parent_key="${{ steps.jira.outputs.parent_key }}"
           
+          if [ -z "${{ steps.jira.outputs.due_date }}" ]; then
+            due_date=""
+          else
+            due_date="* Due Date : ${{ steps.jira.outputs.due_date }}"
+          fi
+          
+          updated_body="${body//\{ticket\}/$ticket}"
+          updated_body="${updated_body//\{parent_key\}/$parent_key}"
+          updated_body="${updated_body//\{due_date\}/$due_date}"
+
           echo "updated_body<<EOF" >> $GITHUB_OUTPUT
           echo "$updated_body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Edit PR title and body
+      - name: Update PR Title
+        id: update_title
         run: |
-          current_branch="${{ github.event.pull_request.head.ref }}"
+          # Add branch name
           original_title="${{ github.event.pull_request.title }}"
-          echo "${{ steps.update_body.outputs.updated_body }}" > pr_body.md
+          current_branch="${{ github.event.pull_request.head.ref }}"
+          fix_versions="${{ steps.jira.outputs.fix_versions }}"
           
-          # Update Title
-          if [[ "${{ steps.extract.outputs.title }}" == *"${{ steps.extract.outputs.branch }}"* ]]; then
+          if [[ "$original_title" == *"$current_branch"* ]]; then
             new_title="$original_title"
           else
             new_title="$current_branch : $original_title"
           fi
-          echo "$new_title" > pr_title.txt
+          
+          if [[ -n "$fix_versions" && "$new_title" != *"$fix_versions"* ]]; then
+            new_title="$new_title (→ $fix_versions)"
+          fi
+          
+          echo "updated_title=$new_title" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Edit PR title and body
+        run: |
+          echo "${{ steps.update_title.outputs.updated_title }}" > pr_title.txt
+          echo "${{ steps.update_body.outputs.updated_body }}" > pr_body.md
 
           gh pr edit "${{ github.event.pull_request.html_url }}" \
             --title "$(cat pr_title.txt)" \

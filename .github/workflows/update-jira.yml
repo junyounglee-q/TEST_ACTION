@@ -1,0 +1,57 @@
+name: Update Jira Ticket Status
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - closed
+
+jobs:
+  update-jira:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set Jira Status → Under Review
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        run: |
+          ticket=${{ github.head_ref }}
+          ticket=${ticket#*/}
+
+          transition_id=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
+            -H "Accept: application/json" \
+            "${{ secrets.JIRA_URL }}/rest/api/3/issue/$ticket/transitions" |
+            jq -r '.transitions[] | select(.name == "Under Review") | .id')
+
+          echo "Using transition ID: $transition_id"
+
+          curl -s -X POST -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            --data "{ \"transition\": { \"id\": \"$transition_id\" } }" \
+            "$JIRA_URL/rest/api/3/issue/$ticket/transitions"
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+
+      - name: Set Jira Status → Done
+        if: github.event.action == 'closed' && github.event.pull_request.merged == true
+        run: |
+          ticket=${{ github.head_ref }}
+          ticket=${ticket#*/}
+
+          transition_id=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
+            -H "Accept: application/json" \
+            "${{ secrets.JIRA_URL }}/rest/api/3/issue/$ticket/transitions" |
+            jq -r '.transitions[] | select(.name == "Done") | .id')
+
+          echo "Using transition ID: $transition_id"
+
+          curl -s -X POST -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            --data "{ \"transition\": { \"id\": \"$transition_id\" } }" \
+            "$JIRA_URL/rest/api/3/issue/$ticket/transitions"
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}

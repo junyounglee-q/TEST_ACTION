@@ -1,4 +1,8 @@
-## [{ticket}](https://growingenergylabs.atlassian.net/browse/{ticket}) PR Summary
+## PR Summary
+
+* [{parent_key}](https://growingenergylabs.atlassian.net/browse/{parent_key}) > [{ticket}](https://growingenergylabs.atlassian.net/browse/{ticket}) 
+{due_date}
+
 ### 📝 Brief Description
 
 ### ⭐️ Reviewer Must Check (Optional)
