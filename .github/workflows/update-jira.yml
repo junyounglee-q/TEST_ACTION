@@ -4,6 +4,8 @@ on:
   pull_request:
     types:
       - opened
+      - reopened
+      - closed
 
 permissions:
   contents: write
@@ -37,7 +39,7 @@ jobs:
           JIRA_URL: ${{ secrets.JIRA_URL }}
 
       - name: Set Jira Status → Done
-        if: github.event.pull_request.merged == true
+        if: github.event.action == 'closed' && github.event.pull_request.merged == true
         run: |
           ticket=${{ github.head_ref }}
           ticket=${ticket#*/}
