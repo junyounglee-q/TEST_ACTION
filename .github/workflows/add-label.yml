@@ -1,0 +1,88 @@
+name: Labeling according to PR
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  label-from-checkbox:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Extract checked items from PR body
+        id: extract
+        run: |
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          PR_BODY=$(gh pr view "$PR_URL" --json body --template '{{.body}}')
+
+          mapfile -t CHECKED <<< "$(
+            echo "$PR_BODY" | grep -iE '^\s*-\s*\[x\]' | \
+            sed -E 's/^\s*-\s*\[[xX]\]\s*([^:]+) *:.*/\1/' | \
+            sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
+            )"
+          
+          mapfile -t UNCHECKED <<< "$(echo "$PR_BODY" | grep -iE '^\s*-\s*\[\s\]' | sed -E 's/^\s*-\s*\[\s\]\s*([^:]+):.*/\1/')"
+
+          IFS=,
+          echo "add_labels=${CHECKED[*]}" >> $GITHUB_OUTPUT
+          echo "remove_labels=${UNCHECKED[*]}" >> $GITHUB_OUTPUT
+
+          echo "Checked labels: ${CHECKED[*]}"
+          echo "Unchecked labels: ${UNCHECKED[*]}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add checked labels
+        if: steps.extract.outputs.add_labels != ''
+        run: |
+          raw="${{ steps.extract.outputs.add_labels }}"
+          IFS=',' read -r -a arr <<< "$raw"
+
+          cleaned_labels=""
+          for label in "${arr[@]}"; do
+            trimmed=$(echo "$label" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
+            if [ -n "$trimmed" ]; then
+              cleaned_labels+="$trimmed,"
+            fi
+          done
+          cleaned_labels="${cleaned_labels%,}"
+
+          echo "Adding labels: $cleaned_labels"
+
+          gh pr edit "${{ github.event.pull_request.html_url }}" \
+            --add-label "$cleaned_labels"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove unchecked labels
+        if: steps.extract.outputs.remove_labels != ''
+        run: |
+          raw="${{ steps.extract.outputs.remove_labels }}"
+          IFS=',' read -r -a arr <<< "$raw"
+
+          cleaned_labels=""
+          for label in "${arr[@]}"; do
+            trimmed=$(echo "$label" | xargs)
+            if [ -n "$trimmed" ]; then
+              cleaned_labels+="$trimmed,"
+            fi
+          done
+          cleaned_labels="${cleaned_labels%,}"
+
+          echo "Removing labels: $cleaned_labels"
+
+          gh pr edit "${{ github.event.pull_request.html_url }}" \
+            --remove-label "$cleaned_labels"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

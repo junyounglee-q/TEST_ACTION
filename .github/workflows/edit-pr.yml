@@ -1,0 +1,81 @@
+name: Auto Edit Pull Request
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  edit-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Extract Ticket Name
+        id: extract
+        run: |
+          branch_name="${{ github.head_ref }}"
+          ticket_name="${branch_name#*/}"
+          echo "ticket=$ticket_name" >> $GITHUB_OUTPUT
+
+      - name: Get Original PR body
+        id: get_body
+        run: |
+          pr_url="${{ github.event.pull_request.html_url }}"
+          original_body=$(gh pr view "$pr_url" --json body --template '{{.body}}')
+          
+          if [ -z "$original_body" ]; then
+          original_body="(No description provided)"
+          fi
+          
+          echo "original<<EOF" >> $GITHUB_OUTPUT
+          echo "$original_body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update PR Body
+        id: update_body
+        run: |
+          pr_url="${{ github.event.pull_request.html_url }}"
+          body=$(gh pr view "$pr_url" --json body --template '{{.body}}')
+          
+          ticket="${{ steps.extract.outputs.ticket }}"
+          updated_body="${body//\{ticket\}/$ticket}"
+          
+          echo "updated_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$updated_body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Edit PR title and body
+        run: |
+          current_branch="${{ github.event.pull_request.head.ref }}"
+          original_title="${{ github.event.pull_request.title }}"
+          echo "${{ steps.update_body.outputs.updated_body }}" > pr_body.md
+          
+          # Update Title
+          if [[ "${{ steps.extract.outputs.title }}" == *"${{ steps.extract.outputs.branch }}"* ]]; then
+            new_title="$original_title"
+          else
+            new_title="$current_branch : $original_title"
+          fi
+          echo "$new_title" > pr_title.txt
+
+          gh pr edit "${{ github.event.pull_request.html_url }}" \
+            --title "$(cat pr_title.txt)" \
+            --body "$(cat pr_body.md)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
