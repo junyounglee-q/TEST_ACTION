@@ -47,9 +47,9 @@ jobs:
       - name: Get Jira Information
         id: jira
         run: |
-          response=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}" \
+          response=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
             -H "Accept: application/json" \
-            "https://${{ secrets.JIRA_DOMAIN }}/rest/api/3/issue/${{ steps.extract.outputs.ticket }}")
+            "https://${{ secrets.JIRA_URL }}/rest/api/3/issue/${{ steps.extract.outputs.ticket }}")
           
           fix_versions=$(echo "$response" | jq -r '[.fields.fixVersions[].name] | join(", ")')
           parent_key=$(echo "$response" | jq -r '.fields.parent.key // empty')
@@ -60,8 +60,8 @@ jobs:
           echo "due_date=$due_date" >> $GITHUB_OUTPUT
         env:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
 
       - name: Update PR Body
         id: update_body
