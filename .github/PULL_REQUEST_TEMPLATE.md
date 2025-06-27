@@ -2,7 +2,6 @@
 
 * [{parent_key}](https://growingenergylabs.atlassian.net/browse/{parent_key}) > [{ticket}](https://growingenergylabs.atlassian.net/browse/{ticket}) 
 {due_date}
-{fix_versions}
 
 ### 📝 Brief Description
 
