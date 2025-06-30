@@ -107,4 +107,4 @@ jobs:
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ steps.extract.outputs.ticket }}
-          transition: "Under Review"
+          transition: "Move to Under Review"
