@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Set HEM Jira Ticket Status → Under Review
-        if: contains('SQA-4701', 'HEM') && (github.event.action == 'opened' || github.event.action == 'reopened')
+        if: contains("${{ github.head_ref }}", 'HEM') && (github.event.action == 'opened' || github.event.action == 'reopened')
         run: |
           ticket=${{ github.head_ref }}
           ticket=${ticket#*/}
@@ -35,7 +35,7 @@ jobs:
           JIRA_URL: ${{ secrets.JIRA_URL }}
 
       - name: Set HEM Jira Ticket Status → Done
-        if: contains('SQA-4701', 'HEM') && (github.event.action == 'closed' && github.event.pull_request.merged == true)
+        if: contains("${{ github.head_ref }}", 'HEM') && (github.event.action == 'closed' && github.event.pull_request.merged == true)
         run: |
           ticket=${{ github.head_ref }}
           ticket=${ticket#*/}
