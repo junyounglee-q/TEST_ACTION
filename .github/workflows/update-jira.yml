@@ -25,7 +25,7 @@ jobs:
         run: |
           echo "ticket=$(echo '${{ github.head_ref }}' | cut -d'/' -f2)" >> $GITHUB_OUTPUT
 
-      - name: Update JIRA ticket to Done
+      - name: Update JIRA ticket to Under Review
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ steps.extract.outputs.ticket }}
@@ -53,16 +53,11 @@ jobs:
         with:
           issue: ${{ steps.extract.outputs.ticket }}
           transition: "Done"
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
-        continue-on-error: true
 
   sqa-open-to-code-review:
     name: "SQA: PR Open → Code Review"
     runs-on: ubuntu-latest
-    if: (github.event.action == 'opened' || github.event.action == 'reopened') && contains(github.head_ref, 'SQA')
+    if: (github.event.action == 'opened' || github.event.action == 'reopened') && contains('SQA-', 'SQA')
     steps:
       - name: Jira Login
         uses: atlassian/gajira-login@v3
@@ -74,18 +69,13 @@ jobs:
       - name: Get Ticket
         id: extract
         run: |
-          echo "ticket=$(echo '${{ github.head_ref }}' | cut -d'/' -f2)" >> $GITHUB_OUTPUT
+          echo "ticket=SQA-4701" >> $GITHUB_OUTPUT
 
       - name: Update JIRA ticket to Code Review
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ steps.extract.outputs.ticket }}
           transition: "Code Review"
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
-        continue-on-error: true
 
   sqa-merge-to-under-review:
     name: "SQA: PR Merge → Under Review"
@@ -109,8 +99,3 @@ jobs:
         with:
           issue: ${{ steps.extract.outputs.ticket }}
           transition: "Under Review"
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
-        continue-on-error: true
