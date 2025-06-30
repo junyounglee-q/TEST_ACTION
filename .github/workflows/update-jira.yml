@@ -75,7 +75,7 @@ jobs:
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ steps.extract.outputs.ticket }}
-          transition: "Code Review"
+          transition: "Back to Code Review"
 
   sqa-merge-to-under-review:
     name: "SQA: PR Merge → Under Review"
