@@ -8,50 +8,103 @@ on:
       - closed
 
 jobs:
-  update-jira:
+  hem-open-to-under-review:
+    name: "HEM: PR Open → Under Review"
     runs-on: ubuntu-latest
-
+    if: (github.event.action == 'opened' || github.event.action == 'reopened') && contains(github.head_ref, 'HEM')
     steps:
-      - name: Set Jira Status → Under Review
-        if: github.event.action == 'opened' || github.event.action == 'reopened'
-        run: |
-          ticket=${{ github.head_ref }}
-          ticket=${ticket#*/}
-
-          transition_id=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
-            -H "Accept: application/json" \
-            "${{ secrets.JIRA_URL }}/rest/api/3/issue/$ticket/transitions" |
-            jq -r '.transitions[] | select(.name == "Under Review") | .id')
-
-          echo "Using transition ID: $transition_id"
-
-          curl -s -X POST -u "$JIRA_EMAIL:$JIRA_TOKEN" \
-            -H "Accept: application/json" -H "Content-Type: application/json" \
-            --data "{ \"transition\": { \"id\": \"$transition_id\" } }" \
-            "$JIRA_URL/rest/api/3/issue/$ticket/transitions"
+      - name: Jira Login
+        uses: atlassian/gajira-login@v3
         env:
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
 
-      - name: Set Jira Status → Done
-        if: github.event.action == 'closed' && github.event.pull_request.merged == true
+      - name: Get Ticket
+        id: extract
         run: |
-          ticket=${{ github.head_ref }}
-          ticket=${ticket#*/}
-
-          transition_id=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}" \
+          transition_list=$(curl -s -u $JIRA_USER_EMAIL:$JIRA_API_TOKEN \
             -H "Accept: application/json" \
-            "${{ secrets.JIRA_URL }}/rest/api/3/issue/$ticket/transitions" |
-            jq -r '.transitions[] | select(.name == "Done") | .id')
-
-          echo "Using transition ID: $transition_id"
-
-          curl -s -X POST -u "$JIRA_EMAIL:$JIRA_TOKEN" \
-            -H "Accept: application/json" -H "Content-Type: application/json" \
-            --data "{ \"transition\": { \"id\": \"$transition_id\" } }" \
-            "$JIRA_URL/rest/api/3/issue/$ticket/transitions"
+            $JIRA_BASE_URL/rest/api/3/issue/SQA-4701/transitions | jq)
+          
+          echo "transition_list=$transition_list"
+          echo "ticket=$(echo '${{ github.head_ref }}' | cut -d'/' -f2)" >> $GITHUB_OUTPUT
         env:
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+
+      - name: Update JIRA ticket to Under Review
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.extract.outputs.ticket }}
+          transition: "Under Review"
+
+  hem-merge-to-done:
+    name: "HEM: PR Merge → Done"
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && contains(github.head_ref, 'HEM')
+    steps:
+      - name: Jira Login
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+
+      - name: Get Ticket
+        id: extract
+        run: |
+          echo "ticket=$(echo '${{ github.head_ref }}' | cut -d'/' -f2)" >> $GITHUB_OUTPUT
+
+      - name: Update JIRA ticket to Done
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.extract.outputs.ticket }}
+          transition: "Done"
+
+  sqa-open-to-code-review:
+    name: "SQA: PR Open → Code Review"
+    runs-on: ubuntu-latest
+    if: (github.event.action == 'opened' || github.event.action == 'reopened') && contains(github.head_ref, 'SQA')
+    steps:
+      - name: Jira Login
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+
+      - name: Get Ticket
+        id: extract
+        run: |
+          echo "ticket=$(echo '${{ github.head_ref }}' | cut -d'/' -f2)" >> $GITHUB_OUTPUT
+
+      - name: Update JIRA ticket to Code Review
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.extract.outputs.ticket }}
+          transition: "Back to Code Review"
+
+  sqa-merge-to-under-review:
+    name: "SQA: PR Merge → Under Review"
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && contains(github.head_ref, 'SQA')
+    steps:
+      - name: Jira Login
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
+
+      - name: Get Ticket
+        id: extract
+        run: |
+          echo "ticket=$(echo '${{ github.head_ref }}' | cut -d'/' -f2)" >> $GITHUB_OUTPUT
+
+      - name: Update JIRA ticket to Under Review
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ steps.extract.outputs.ticket }}
+          transition: "Move to Under Review"
