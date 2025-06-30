@@ -35,7 +35,7 @@ jobs:
           JIRA_URL: ${{ secrets.JIRA_URL }}
 
       - name: Set HEM Jira Ticket Status → Done
-        if: contains("${{ github.head_ref }}", 'HEM') && (github.event.action == 'closed' && github.event.pull_request.merged == true)
+        if: contains('SQA-', 'HEM') && (github.event.action == 'closed' && github.event.pull_request.merged == true)
         run: |
           ticket=${{ github.head_ref }}
           ticket=${ticket#*/}
@@ -57,15 +57,17 @@ jobs:
           JIRA_URL: ${{ secrets.JIRA_URL }}
 
       - name: Set SQA Jira Ticket Status → Code Review
-        if: contains('SQA-4701', 'SQA') && (github.event.action == 'opened' || github.event.action == 'reopened')
+        if: contains('SQA-', 'SQA') && (github.event.action == 'opened' || github.event.action == 'reopened')
         run: |
           ticket=${{ github.head_ref }}
-          ticket="SQA-4701"
+          ticket=${ticket#*/}
           
-          transition_id=$(curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+          response=$(curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
             -H "Accept: application/json" \
-            "$JIRA_URL/rest/api/3/issue/$ticket/transitions" |
-            jq -r '.transitions[] | select(.name == "Code Review") | .id')
+            "$JIRA_URL/rest/api/3/issue/$ticket/transitions)"
+          echo "response: "
+          echo "$response"
+          transition_id=$(echo "$response" | jq -r '.transitions[] | select(.name == "Code Review") | .id')
           
           echo "Using transition ID: $transition_id"
           
@@ -79,10 +81,10 @@ jobs:
           JIRA_URL: ${{ secrets.JIRA_URL }}
 
       - name: Set SQA Jira Ticket Status → Under Review
-        if: contains('SQA-4701', 'SQA') && (github.event.action == 'closed' && github.event.pull_request.merged == true)
+        if: contains("${{ github.head_ref }}", 'SQA') && (github.event.action == 'closed' && github.event.pull_request.merged == true)
         run: |
           ticket=${{ github.head_ref }}
-          ticket="SQA-4701"
+          ticket=${ticket#*/}
           
           transition_id=$(curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
             -H "Accept: application/json" \
