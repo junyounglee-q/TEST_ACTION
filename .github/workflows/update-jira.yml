@@ -13,12 +13,17 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.event.action == 'opened' || github.event.action == 'reopened') && contains(github.head_ref, 'HEM')
     steps:
+      - name: Jira Login
+        uses: atlassian/gajira-login@v3
+        with:
+          site: ${{ secrets.JIRA_BASE_URL }}
+          email: ${{ secrets.JIRA_USER_EMAIL }}
+          apiToken: ${{ secrets.JIRA_API_TOKEN }}
+
       - name: Get Ticket
         id: extract
         run: |
-          ticket=${{ github.head_ref }}
-          ticket=${ticket#*/}
-          echo "ticket=$ticket" >> GITHUB_OUTPUT
+          echo "ticket=${${{ github.head_ref }}#*/}" >> GITHUB_OUTPUT
 
       - name: Update JIRA ticket to Done
         uses: atlassian/gajira-transition@v3
@@ -36,12 +41,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && contains(github.head_ref, 'HEM')
     steps:
+      - name: Jira Login
+        uses: atlassian/gajira-login@v3
+        with:
+          site: ${{ secrets.JIRA_BASE_URL }}
+          email: ${{ secrets.JIRA_USER_EMAIL }}
+          apiToken: ${{ secrets.JIRA_API_TOKEN }}
+
       - name: Get Ticket
         id: extract
         run: |
-          ticket=${{ github.head_ref }}
-          ticket=${ticket#*/}
-          echo "ticket=$ticket" >> GITHUB_OUTPUT
+          echo "ticket=${${{ github.head_ref }}#*/}" >> GITHUB_OUTPUT
 
       - name: Update JIRA ticket to Done
         uses: atlassian/gajira-transition@v3
@@ -59,12 +69,17 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.event.action == 'opened' || github.event.action == 'reopened') && contains(github.head_ref, 'SQA')
     steps:
+      - name: Jira Login
+        uses: atlassian/gajira-login@v3
+        with:
+          site: ${{ secrets.JIRA_BASE_URL }}
+          email: ${{ secrets.JIRA_USER_EMAIL }}
+          apiToken: ${{ secrets.JIRA_API_TOKEN }}
+
       - name: Get Ticket
         id: extract
         run: |
-          ticket=${{ github.head_ref }}
-          ticket=${ticket#*/}
-          echo "ticket=$ticket" >> GITHUB_OUTPUT
+          echo "ticket=${${{ github.head_ref }}#*/}" >> GITHUB_OUTPUT
 
       - name: Update JIRA ticket to Code Review
         uses: atlassian/gajira-transition@v3
@@ -82,12 +97,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && contains(github.head_ref, 'SQA')
     steps:
+      - name: Jira Login
+        uses: atlassian/gajira-login@v3
+        with:
+          site: ${{ secrets.JIRA_BASE_URL }}
+          email: ${{ secrets.JIRA_USER_EMAIL }}
+          apiToken: ${{ secrets.JIRA_API_TOKEN }}
+
       - name: Get Ticket
         id: extract
         run: |
-          ticket=${{ github.head_ref }}
-          ticket=${ticket#*/}
-          echo "ticket=$ticket" >> GITHUB_OUTPUT
+          echo "ticket=${${{ github.head_ref }}#*/}" >> GITHUB_OUTPUT
 
       - name: Update JIRA ticket to Under Review
         uses: atlassian/gajira-transition@v3
