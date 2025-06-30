@@ -13,10 +13,17 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.event.action == 'opened' || github.event.action == 'reopened') && contains(github.head_ref, 'HEM')
     steps:
+      - name: Get Ticket
+        id: extract
+        run: |
+          ticket=${{ github.head_ref }}
+          ticket=${ticket#*/}
+          echo "ticket=$ticket" >> GITHUB_OUTPUT
+
       - name: Update JIRA ticket to Done
-        uses: atlassian/gajira-transition@master
+        uses: atlassian/gajira-transition@v3
         with:
-          issue: ${{ github.head_ref }}
+          issue: ${{ steps.extract.outputs.ticket }}
           transition: "Under Review"
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
@@ -29,10 +36,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && contains(github.head_ref, 'HEM')
     steps:
+      - name: Get Ticket
+        id: extract
+        run: |
+          ticket=${{ github.head_ref }}
+          ticket=${ticket#*/}
+          echo "ticket=$ticket" >> GITHUB_OUTPUT
+
       - name: Update JIRA ticket to Done
-        uses: atlassian/gajira-transition@master
+        uses: atlassian/gajira-transition@v3
         with:
-          issue: ${{ github.head_ref }}
+          issue: ${{ steps.extract.outputs.ticket }}
           transition: "Done"
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
@@ -45,10 +59,17 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.event.action == 'opened' || github.event.action == 'reopened') && contains(github.head_ref, 'SQA')
     steps:
+      - name: Get Ticket
+        id: extract
+        run: |
+          ticket=${{ github.head_ref }}
+          ticket=${ticket#*/}
+          echo "ticket=$ticket" >> GITHUB_OUTPUT
+
       - name: Update JIRA ticket to Code Review
-        uses: atlassian/gajira-transition@master
+        uses: atlassian/gajira-transition@v3
         with:
-          issue: ${{ github.head_ref }}
+          issue: ${{ steps.extract.outputs.ticket }}
           transition: "Code Review"
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
@@ -61,10 +82,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && contains(github.head_ref, 'SQA')
     steps:
+      - name: Get Ticket
+        id: extract
+        run: |
+          ticket=${{ github.head_ref }}
+          ticket=${ticket#*/}
+          echo "ticket=$ticket" >> GITHUB_OUTPUT
+
       - name: Update JIRA ticket to Under Review
-        uses: atlassian/gajira-transition@master
+        uses: atlassian/gajira-transition@v3
         with:
-          issue: ${{ github.head_ref }}
+          issue: ${{ steps.extract.outputs.ticket }}
           transition: "Under Review"
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
